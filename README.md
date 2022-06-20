@@ -3,6 +3,11 @@ Código correspondiente al Trabajo de Fin de Grado de Jaime De la Vega Fornié p
 Trabajo de Fin de Grado: Operadores de Mutación Cuántica para Qiskit.
 Se pretender desarrollar una librería que permita crear operadores de mutación de manera sistemática y sencilla.
 
+Resumen:
+La computación cuántica es una de las disciplinas que están a la orden del día y en la vanguardia del progreso. Con su inicio en el Siglo XX, la aparición de las primeras computadoras cuánticas, aporta un rayo de esperanza al desarrollo de la computación cuántica. Hoy en día, el software y los algoritmos cuánticos están muy por delante del desarrollo de hardware, sin embargo, eso nunca ha sido un problema para que los teóricos puedan desarrollar su trabajo. En programación cuántica, el desarrollo de programas es complejo ya que se realiza con circuitos y, además, muchas veces es muy poco intuitivo. Es por esto que se requieren cada vez más herramientas de testing que nos faciliten encontrar errores. Una de las herramientas de testing más útiles es el testing con mutantes, introduciendo un mutante en el código y sometiéndolo a métodos para ver si somos capaces de detectar el mutante. En esta línea trabajan, por ejemplo, el metamorphic testing y el mutant testing.
+En este trabajo el objetivo será iniciar al lector en la computación cuántica, partiendo de ciertas nociones matemáticas y los postulados de la mecánica cuántica de una manera muy sencilla, para más tarde aplicarlos en sistemas cuánticos de qubits.\\
+Después, se profundizará en la computación cuántica con los circuitos y algoritmos dando un entendimiento de cuál es su funcionamiento.
+Una vez se de una introducción al testing y al testing con mutantes, se culminará con la creación de clases y funciones en Python usando el lenguage de programación cuántico Qiskit para poder generar mutantes cuánticos para cualquier circuito. Este código creado dará lugar a una manera sistemática de crear mutantes para su uso en testing cuántico con Qiskit.
 
 Abstract:
 Quantum computing is cutting edge technology and at the forefront of progress. With its inception
