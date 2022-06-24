@@ -403,13 +403,13 @@ def mutant(circ,gate=True,target_qubit=True,target_clbit=True,measure=True):
     
     r = random.randint(1, 4)
     if r==1 and gate:
-        result = gate_mutant(circ,gate,target_qubit,target_clbit,measure)
+        result = gate_mutant(circ)
     elif r==2 and target_qubit:
-        result = targetqubit_mutant(circ,gate,target_qubit,target_clbit,measure)
+        result = targetqubit_mutant(circ)
     elif r==3 and target_clbit:
-        result = targetclbit_mutant(circ,gate,target_qubit,target_clbit,measure)
+        result = targetclbit_mutant(circ)
     elif measure:
-        result = measure_mutant(circ,gate,target_qubit,target_clbit,measure)
+        result = measure_mutant(circ)
     if result == circ:
         result = mutant(circ,gate,target_qubit,target_clbit,measure)
     return result
