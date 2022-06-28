@@ -5,7 +5,12 @@
 Mutant module for mutation testing, created by Jaime De la Vega
 4 operators are defined to create mutants
 """
-from qiskit.circuit import Instruction
+    
+
+
+
+
+from qiskit.circuit import Instruction, Qubit, Clbit
 from qiskit import QuantumCircuit
 import random
 import numpy as np
@@ -65,35 +70,118 @@ three_q_ops = [CCXGate, CSwapGate]
     
     
     
-    
-    
-    
+
 
 
 def change(ls,q1,q2):
-    """
-    Parameters
-    ----------
-    ls : lista
-    q1 : elemento de la lista 
-    q2 : Telemento de la lista
-    
-    Description
-    -----------
-    Modifica la lista ls para intercambiar el elemento q1 por el elemento q2
-
-    Returns
-    -------
-    ls : lista
-
-    """
     if q1 in ls:
         index = ls.index(q1)
         ls[index]=q2
     return ls
         
 
-def replace(circ, origin: Instruction, instruction: Instruction):
+def replace(circ, origin: Instruction, instruction: Instruction,pos=0):
+    """
+    Parameters
+    ----------
+    circ : QuantumCircuit
+        circuito a modificar
+    origin : Instruction
+        puerta a eliminar
+    instruction : Instruction
+        puerta a insertar
+    pos : Int
+        Posición de la puerta a cambiar, si hay 3 puertas iguales, al poner pos=1 solo se cambia la segunda
+
+    Description
+    -----------
+    Intercambia TODAS las puertas origin por la puerta instruction en el circuito circ
+    
+    Returns
+    -------
+    found : Bool
+
+    """
+    found = False
+    i=0
+    while i<len(circ._data) and (not found):
+        if circ._data[i][0]==origin:
+            if pos==0:
+                found=True
+                circ._data[i]=(instruction,circ._data[i][1],circ._data[i][2])
+            else:
+                pos-=1
+        i+=1
+    return found
+
+
+def replace_target_qubit(circ,origin,target_qubit: Qubit,final_qubit: Qubit, pos=0):
+    """
+    Parameters
+    ----------
+    circ : QuantumCircuit
+    origin : Instruction
+    target_qubit : Qubit
+    final_qubit : Qubit
+    pos : Int
+        Posición de la puerta a cambiar, si hay 3 puertas iguales, al poner pos=1 solo se cambia la segunda
+
+    Description
+    -----------
+    Dada una puerta origin, intercambia target_qubit por final_qubit en el conjunto de los qubits a los que afecta la puerta
+    
+    Returns
+    -------
+    found : Bool
+
+    """
+    found = False
+    i=0
+    while i<len(circ._data) and (not found):
+        if circ._data[i][0]==origin:
+            if pos==0 and target_qubit in circ._data[i][1]:
+                found=True
+                circ._data[i]=(circ._data[i][0],change(circ._data[i][1],target_qubit,final_qubit),circ._data[i][2])
+            else:
+                pos-=1
+        i+=1
+    return found
+
+def replace_target_clbit(circ,origin: Instruction,target_clbit: Clbit,final_clbit: Clbit, pos=0):
+    """
+
+    Parameters
+    ----------
+    circ : QuantumCircuit
+    origin : Instruction
+    target_clbit : Clbit
+    final_clbit : Clbit
+    pos : Int
+        Posición de la puerta a cambiar, si hay 3 puertas iguales, al poner pos=1 solo se cambia la segunda
+
+    Description
+    -----------
+    Dada una puerta que tenga bits clásicos, intercambia target_clbit por final_clbit en el conjunto de bits clásicos a los que afecta la puerta    
+
+    Returns
+    -------
+    found : Bool
+
+    """
+    found = False
+    i=0
+    while i<len(circ._data) and (not found):
+        if circ._data[i][0]==origin:
+            if pos==0:
+                if target_clbit in circ._data[i][2]:
+                    found=True
+                    circ._data[i]=(circ._data[i][0],circ._data[i][1],change(circ._data[i][2],target_clbit,final_clbit))
+            else:
+                pos-=1
+        i+=1
+    return found
+
+def replace_all(circ, origin: Instruction, instruction: Instruction):
     """
     Parameters
     ----------
@@ -106,7 +194,7 @@ def replace(circ, origin: Instruction, instruction: Instruction):
 
     Description
     -----------
-    Intercambia las puertas origin por la puerta instruction en el circuito circ
+    Intercambia TODAS las puertas origin por la puerta instruction en el circuito circ
     
     Returns
     -------
@@ -117,7 +205,7 @@ def replace(circ, origin: Instruction, instruction: Instruction):
     
     
     
-def replace_target_qubit(circ,origin,target_qubit,final_qubit):
+def replace_all_target_qubit(circ,origin,target_qubit: Qubit,final_qubit: Qubit):
     """
     Parameters
     ----------
@@ -141,10 +229,9 @@ def replace_target_qubit(circ,origin,target_qubit,final_qubit):
 
 
 
-def replace_target_clbit(circ,origin,target_clbit,final_clbit):
+def replace_all_target_clbit(circ,origin: Instruction,target_clbit: Clbit,final_clbit: Clbit):
     """
     
-
     Parameters
     ----------
     circ : QuantumCircuit
@@ -166,12 +253,8 @@ def replace_target_clbit(circ,origin,target_clbit,final_clbit):
 
 
 
-        
-    
 
-
-
-def gate_mutant(circ1,input_gate=None,output_gate=None):
+def gate_mutant(circ1,input_gate=None,output_gate=None,verbose=False):
     """
     
 
@@ -196,11 +279,13 @@ def gate_mutant(circ1,input_gate=None,output_gate=None):
         n = len(circ.data)
         i=0
         num_clbits=-1
-        while num_clbits!=0 and i<n:
+        valid = False
+        while num_clbits!=0 and i<n and not valid:
             r = random.randint(0, n-1)
             inst = circ.data[r]
-            input_gate=inst[0]
-            num_clbits = input_gate.num_clbits
+            if inst[0].num_qubits<3:
+                input_gate=inst[0]
+                num_clbits = input_gate.num_clbits
             i+=1
     if output_gate is None:
         """
@@ -228,11 +313,11 @@ def gate_mutant(circ1,input_gate=None,output_gate=None):
         else:
             output_gate = GATE()     
     replace(circ,input_gate,output_gate)
-    print('Se reemplaza la puerta ',input_gate.name,' por la puerta ',output_gate.name)
+    if verbose:
+        print('Se reemplaza la puerta ',input_gate.name,' por la puerta ',output_gate.name)
     return circ
 
-
-def targetqubit_mutant(circ1,gate=None,target_qubit=None,final_qubit=None):
+def targetqubit_mutant(circ1,gate=None,target_qubit=None,final_qubit=None,verbose=False):
     """
     
 
@@ -266,7 +351,9 @@ def targetqubit_mutant(circ1,gate=None,target_qubit=None,final_qubit=None):
                 inst = circ.data[r]
                 num_qubits = inst[0].num_qubits
                 i+=1
-                gate=inst[0]            
+                gate=inst[0]
+    if gate.name == 'barrier':
+        return circ
     if gate.num_qubits<2:
         raise Exception('Could not find multi qubit gates, change the circuit or try again')
     else:
@@ -275,12 +362,13 @@ def targetqubit_mutant(circ1,gate=None,target_qubit=None,final_qubit=None):
         if final_qubit is None:
             final_qubit = circ.qubits[random.randint(0,len(circ.qubits)-1)]
         replace_target_qubit(circ, gate, target_qubit, final_qubit)
+    if verbose:
+        print('Se han cambiado los qubits a los que afecta la puerta ',gate.name)
     return circ
         
 
     
-
-def targetclbit_mutant(circ1,gate=None,target_clbit=None,final_clbit=None):
+def targetclbit_mutant(circ1,gate=None,target_clbit=None,final_clbit=None,verbose=False):
     """
     
 
@@ -318,18 +406,21 @@ def targetclbit_mutant(circ1,gate=None,target_clbit=None,final_clbit=None):
                 i+=1
                 gate=inst[0]
     if gate.num_clbits==0:
-        raise Exception('Could not find gates with classical bits or meaurements, change the circuit or try again')
+        return circ
+    if gate.name == 'barrier':
+        return circ
     else:
         if target_clbit is None:
             target_clbit = inst[2][random.randint(0, len(inst[2])-1)]
         if final_clbit is None:
             final_clbit = circ.clbits[random.randint(0,len(circ.clbits)-1)]
         replace_target_clbit(circ, gate, target_clbit, final_clbit)
-    print('Se ha cambiado los bits clásicos afectados')
+    if verbose:
+        print('Se ha cambiado los bits clásicos afectados')
     return circ
     
     
-def measure_mutant(circ1,target_qubit=None,final_qubit=None):
+def measure_mutant(circ1,target_qubit=None,final_qubit=None,verbose=False):
     """
     
 
@@ -364,16 +455,28 @@ def measure_mutant(circ1,target_qubit=None,final_qubit=None):
             i+=1
             gate=inst[0]
         target_qubit=inst[1][0]
+    else:
+        found=False
+        i=0
+        while not found and i<n:
+            inst = circ.data[i]
+            if inst[0]=='measure' and target_qubit in inst[1]:
+                found=True
+            gate=inst[0]
+            i+=1
+    if gate.name == 'barrier':
+        return circ
     if gate.name != 'measure':
-        raise Exception('Could not find measurement gate, change the circuit or try again')
+        return circ
     if final_qubit is None:
         final_qubit = circ.qubits[random.randint(0,len(circ.qubits)-1)]
-    print('Se cambia el qubit al que afecta la medición')
+    if verbose:
+        print('Se cambia el qubit al que afecta la medición')
     replace_target_qubit(circ, gate, target_qubit, final_qubit)
     return circ
 
 
-def mutant(circ,gate=True,target_qubit=True,target_clbit=True,measure=True):
+def mutant(circ,gate=True,target_qubit=True,target_clbit=True,measure=True,verbose=False):
     """
     
 
@@ -403,21 +506,23 @@ def mutant(circ,gate=True,target_qubit=True,target_clbit=True,measure=True):
     
     r = random.randint(1, 4)
     if r==1 and gate:
-        result = gate_mutant(circ)
+        result = gate_mutant(circ,verbose=False)
     elif r==2 and target_qubit:
-        result = targetqubit_mutant(circ)
+        result = targetqubit_mutant(circ,verbose=False)
     elif r==3 and target_clbit:
-        result = targetclbit_mutant(circ)
+        result = targetclbit_mutant(circ,verbose=False)
     elif measure:
-        result = measure_mutant(circ)
+        result = measure_mutant(circ,verbose=False)
+    else:
+        result = mutant(circ,gate,target_qubit,target_clbit,measure,verbose)
     if result == circ:
-        result = mutant(circ,gate,target_qubit,target_clbit,measure)
+        result = mutant(circ,gate,target_qubit,target_clbit,measure,verbose)
     return result
 
 
 
 
-
+# Ahora hacemos que sean métodos para QuantumCircuit
 QuantumCircuit.mutant = mutant
 QuantumCircuit.gate_mutant = gate_mutant
 QuantumCircuit.targetqubit_mutant = targetqubit_mutant
